@@ -5,7 +5,7 @@ import numpy as np
 from scipy.interpolate import interpn
 import contourpy
 from bokeh.plotting import figure
-from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource, Title
+from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource, Title, Range1d
 from scipy.stats import gaussian_kde
 from .._models import gates, dimension
 from .._models.gating_strategy import GatingStrategy
@@ -293,7 +293,7 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
     return ellipse
 
 
-def plot_histogram(x, x_label='x', bins=None):
+def plot_histogram(x, x_label='x', bins=None,x_min=None,x_max=None):
     """
     Creates a Bokeh histogram plot of the given 1-D data array.
 
@@ -306,29 +306,34 @@ def plot_histogram(x, x_label='x', bins=None):
     """
     if bins is None:
         bins = 'sqrt'
+    if x_min is not None:
+        x = x[x>=x_min]
+    if x_max is not None:
+        x = x[x<=x_max]
 
-    hist, edges = np.histogram(x, density=False, bins=bins)
+    #hist, edges = np.histogram(x, density=False, bins=bins)
+    hist, edges = np.histogram(x, density=False, bins=bins,range = (x_min,x_max))
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
 
-    p = figure(tools=tools)
+    p = figure (tools=tools)
     p.title.align = 'center'
     p.quad(
         top=hist,
         bottom=0,
         left=edges[:-1],
         right=edges[1:],
-        alpha=0.5
-    )
+        alpha=0.5)
 
     p.y_range.start = 0
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = 'Event Count'
-
+    
+    p.x_range = Range1d(start=x_min-0.02,end = x_max+0.02)
     # set padding to match scatter plot
     # scatter has 0.02, but we need to account for the bar width
     # so doubling that looks about right
-    p.x_range.range_padding = 0.04
+    #p.x_range.range_padding = 0.04
 
     return p
 
@@ -610,7 +615,8 @@ def plot_gate(
         y_min=None,
         y_max=None,
         color_density=True,
-        bin_width=4
+        bin_width=4,
+        bins = 100
 ):
     """
     Returns an interactive plot for the specified gate. The type of plot is
@@ -718,7 +724,7 @@ def plot_gate(
             # might be a label reference in the comp matrix
             matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
             try:
-                matrix_dim_idx = matrix.fluorochromes.index(dim_ids_ordered[0])
+                matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
             except ValueError:
                 raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[0])
             detector = matrix.detectors[matrix_dim_idx]
@@ -744,7 +750,7 @@ def plot_gate(
                 # might be a label reference in the comp matrix
                 matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
                 try:
-                    matrix_dim_idx = matrix.fluorochromes.index(dim_ids_ordered[1])
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
                 except ValueError:
                     raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[1])
                 detector = matrix.detectors[matrix_dim_idx]
@@ -773,7 +779,7 @@ def plot_gate(
             bin_width=bin_width
         )
     elif gate_type == 'hist':
-        p = plot_histogram(x, dim_ids[0])
+        p = plot_histogram(x, dim_ids[0],bins=bins,x_min = x_min,x_max = x_max)
     else:
         raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
