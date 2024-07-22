@@ -426,7 +426,8 @@ class Session(object):
             y_max=None,
             color_density=True,
             bin_width=4,
-            bins = 100
+            bins = 100,
+            smooth_window_size = None
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -492,7 +493,8 @@ class Session(object):
             y_max=y_max,
             color_density=color_density,
             bin_width=bin_width,
-            bins = bins
+            bins = bins,
+            smooth_window_size = smooth_window_size
         )
 
         return p
