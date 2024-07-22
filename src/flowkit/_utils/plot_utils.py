@@ -292,8 +292,12 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
 
     return ellipse
 
+def gaussian_smooth(hist, window_size = 100):
+    """ Smooth histogram using a Gaussian kernel """
+    smoothed_hist = np.convolve(hist, np.ones(window_size)/window_size, mode='same')
+    return smoothed_hist
 
-def plot_histogram(x, x_label='x', bins=None,x_min=None,x_max=None):
+def plot_histogram(x, x_label='x', bins=None, x_min=None, x_max=None, smooth_window_size = None):
     """
     Creates a Bokeh histogram plot of the given 1-D data array.
 
@@ -306,13 +310,24 @@ def plot_histogram(x, x_label='x', bins=None,x_min=None,x_max=None):
     """
     if bins is None:
         bins = 'sqrt'
-    if x_min is not None:
+    if x_min and x_max:
         x = x[x>=x_min]
-    if x_max is not None:
         x = x[x<=x_max]
+        hist, edges = np.histogram(x, density=False, bins=bins,range = (x_min,x_max))
+    elif x_min:
+        x = x[x>=x_min]
+        hist, edges = np.histogram(x, density=False, bins=bins)
+    elif x_max:
+        x = x[x<=x_max]
+        hist, edges = np.histogram(x, density=False, bins=bins)
+    else:
+        hist, edges = np.histogram(x, density=False, bins=bins)
+        
+    if smooth_window_size:
+        hist = gaussian_smooth(hist, window_size = smooth_window_size)
 
-    #hist, edges = np.histogram(x, density=False, bins=bins)
-    hist, edges = np.histogram(x, density=False, bins=bins,range = (x_min,x_max))
+    
+    
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
 
@@ -329,7 +344,8 @@ def plot_histogram(x, x_label='x', bins=None,x_min=None,x_max=None):
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = 'Event Count'
     
-    p.x_range = Range1d(start=x_min,end = x_max)
+    if x_min and x_max:
+        p.x_range = Range1d(start=x_min,end = x_max)       
     # set padding to match scatter plot
     # scatter has 0.02, but we need to account for the bar width
     # so doubling that looks about right
@@ -616,7 +632,8 @@ def plot_gate(
         y_max=None,
         color_density=True,
         bin_width=4,
-        bins = 100
+        bins = 100,
+        smooth_window_size = None
 ):
     """
     Returns an interactive plot for the specified gate. The type of plot is
@@ -779,7 +796,7 @@ def plot_gate(
             bin_width=bin_width
         )
     elif gate_type == 'hist':
-        p = plot_histogram(x, dim_ids[0],bins=bins,x_min = x_min,x_max = x_max)
+        p = plot_histogram(x, dim_ids[0],bins=bins,x_min = x_min,x_max = x_max, smooth_window_size = smooth_window_size)
     else:
         raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
