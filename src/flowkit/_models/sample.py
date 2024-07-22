@@ -1069,6 +1069,9 @@ class Sample(object):
         grid = gridplot(plots)
 
         return grid
+        
+        
+
 
     def plot_histogram(
             self,
@@ -1078,7 +1081,7 @@ class Sample(object):
             bins=None,
             data_min=None,
             data_max=None,
-            x_range=None
+            x_range=None,
     ):
         """
         Returns a histogram plot of the specified channel events
@@ -1111,7 +1114,8 @@ class Sample(object):
         p = plot_utils.plot_histogram(
             channel_data,
             x_label=self.pnn_labels[channel_index],
-            bins=bins
+            bins=bins,
+
         )
 
         p.title = Title(text=self.id, align='center')
